@@ -1,0 +1,107 @@
+```{r}
+library(tidyverse)  
+library(mice)
+library(VIM)
+```
+
+```{r}
+library(readr)
+class_grades <- read_csv("~/Desktop/BAN 502/Module 4/Mod4MissingData/class-grades.csv")
+```
+
+```{r}
+summary(class_grades)
+```
+
+```{r}
+# Use sapply() and colSums() to check for missing values
+missing_counts <- sapply(class_grades, function(x) sum(is.na(x)))
+missing_counts
+```
+
+```{r}
+# Visualize missingness using aggr() from VIM package
+aggr(class_grades, numbers = TRUE, sortVars = TRUE, sortCombs = TRUE, labels = names(class_grades), cex.axis = 0.5, gap = 3)
+
+# Check for students with multiple missing values
+students_with_missing_values <- rowSums(is.na(class_grades))
+students_with_multiple_missing <- names(students_with_missing_values[students_with_missing_values > 1])
+students_with_missing_values
+students_with_multiple_missing
+```
+
+```{r}
+# Remove rows with missing values
+class_grades_no_missing <- na.omit(class_grades)
+class_grades_no_missing
+```
+```{r}
+# Calculate missing counts
+missing_counts <- sapply(class_grades, function(x) sum(is.na(x)))
+
+# Identify columns without missing values
+cols_no_missing_values <- names(missing_counts[missing_counts == 0])
+
+# Create a new dataframe with columns without missing values
+class_grades_no_missing_cols <- class_grades %>%
+  select(cols_no_missing_values)
+class_grades_no_missing_cols
+```
+
+
+```{r}
+missing_variables <- colnames(class_grades)[colSums(is.na(class_grades)) > 0]
+
+aggr_plot <- aggr(class_grades, col = c('navajowhite1', 'navajowhite3'), numbers = TRUE, sortVars = TRUE, labels = names(class_grades), cex.axis = 0.7, gap = 3, ylab = c("Histogram of missing data", "Pattern"))
+plot(aggr_plot)
+
+students_with_missing_data <- row.names(aggr_plot$missings)
+students_with_missing_data
+
+data_no_missing_rows <- class_grades[complete.cases(class_grades), ]
+
+class_grades_no_missing_cols <- class_grades %>%
+  select(names(class_grades)[complete.cases(class_grades)])
+
+
+```
+
+```{r}
+# Set random seed for reproducibility
+set.seed(123)
+
+# Task 6: Impute missing data using mice package
+imputed_data <- mice(class_grades, m = 5, method = "pmm")
+
+# Extract the imputed datasets
+imputed_datasets <- complete(imputed_data, 1)
+
+# Calculate the mean value for the "Final" variable after imputation
+mean_final_after_imputation <- mean(imputed_datasets$Final, na.rm = TRUE)
+mean_final_after_imputation
+```
+
+```{r}
+# Task 1: Identify missing data
+missing_data <- sapply(class_grades, function(x) sum(is.na(x)))
+variables_with_missing <- names(which(missing_data > 0))
+print("Variables with missing data:")
+print(variables_with_missing)
+
+# Task 2: Visualize missingness using VIM
+aggr_plot <- aggr(class_grades, numbers = TRUE, sortVars = TRUE, labels = names(class_grades), cex.axis = 0.7, gap = 3)
+print(aggr_plot)
+
+# Task 3: Row-wise deletion
+df_row_deleted <- class_grades[complete.cases(class_grades), ]
+print(paste("Rows after row-wise deletion:", nrow(df_row_deleted)))
+
+# Task 4: Column-wise deletion
+df_col_deleted <- class_grades[, colSums(is.na(class_grades)) == 0]
+print(paste("Columns after column-wise deletion:", ncol(df_col_deleted)))
+```
+
+
+
+
+
